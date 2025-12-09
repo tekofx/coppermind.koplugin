@@ -50,8 +50,10 @@ local WikiSearchResults = WidgetContainer:extend{
 
 function CopperMindBuilder:showSearchResults(dict_popup)
     local response_body = {}
+
+
     http.request{
-        url = "https://es.coppermind.net/w/api.php?action=opensearch&format=json&formatversion=2&search=sazed&namespace=0|3000&limit=10",
+        url = string.format("https://es.coppermind.net/w/api.php?action=opensearch&format=json&formatversion=2&search=%s&namespace=0|3000&limit=10",dict_popup.word ),
         sink = ltn12.sink.table(response_body)
     }
 
