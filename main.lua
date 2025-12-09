@@ -20,9 +20,11 @@ local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local InfoMessage = require("ui/widget/infomessage")
+local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
 local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
+local ViewHTML = require("ui/viewhtml")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
 --Network imports
@@ -40,6 +42,101 @@ local CopperMindBuilder = WidgetContainer:extend{
     is_doc_only = false,
 }
 
+local WikiSearchResults = WidgetContainer:extend{
+    name = "wiki_search_results",
+    is_doc_only = false,
+}
+
+
+function CopperMindBuilder:showSearchResults(dict_popup)
+    local response_body = {}
+    http.request{
+        url = "https://es.coppermind.net/w/api.php?action=opensearch&format=json&formatversion=2&search=sazed&namespace=0|3000&limit=10",
+        sink = ltn12.sink.table(response_body)
+    }
+
+    local response_text = table.concat(response_body)
+    local success, data = pcall(rapidjson.decode, response_text)
+    local wikiResultsMenu = nil
+    dict_popup:onClose()
+    local size = Screen:getSize()
+    local width = math.floor(size.w * 0.9)
+
+    if success and type(data) == "table" and #data > 1 then
+        local titles = data[2]
+        local urls = data[4]
+        local buttons = {
+            TextWidget:new{
+                text=_("Found entries"),
+                face = Font:getFace("xx_smallinfofont")
+            }
+        }
+        for i, title in ipairs(titles) do
+            if i > 0 then
+                    table.insert(buttons, VerticalSpan:new{ width = 10 })
+                end
+            table.insert(buttons, Button:new{
+                text = title,
+                width = width,
+                callback = function()
+                    CopperMindBuilder.showWiki(self, urls[i])
+                end
+            })
+        end
+        local buttonsTable = VerticalGroup:new{
+            unpack(buttons)
+        }
+
+       self.wiki_results_menu = CenterContainer:new{
+            dimen = size,
+            FrameContainer:new{
+                padding = Size.padding.default,
+                background = Blitbuffer.COLOR_WHITE,
+                bordersize = Size.border.window,
+                radius = Size.radius.window,
+                buttonsTable
+            }
+        }
+
+        UIManager:show(
+            self.wiki_results_menu
+        )
+    end
+end
+
+function CopperMindBuilder:showWiki(url)
+    local size = Screen:getSize()
+    local width = math.floor(size.w * 0.9)
+    local response_body = {}
+    local res, code = http.request{
+        url = url,
+        sink = ltn12.sink.table(response_body)
+    }
+    if res then
+        local html = table.concat(response_body)
+        UIManager:close(self.wiki_results_menu)
+        local dialog = CenterContainer:new{ -- or your main dialog
+            dimen = size,
+            -- ... other settings
+        }
+
+        local scroll_widget = ScrollHtmlWidget:new{
+            html_body = html,
+            width = size.w,
+            height = size.h,
+            dialog = dialog, -- Set the dialog reference
+        }
+
+        dialog[1] = FrameContainer:new{
+            -- ... container settings
+            scroll_widget
+        }
+
+        UIManager:show(dialog)
+    else
+        logger.dbg("Error fetching html")
+    end
+end
 
 --[[--
 Triggered when selected word
@@ -52,63 +149,9 @@ function CopperMindBuilder:onDictButtonsReady(dict_popup, buttons)
         callback = function()
             local button = dict_popup.button_table.button_by_id["coppermind"]
             if not button then return end
-            local response_body = {}
-            http.request{
-                url = "https://es.coppermind.net/w/api.php?action=opensearch&format=json&formatversion=2&search=sazed&namespace=0|3000&limit=10",
-                sink = ltn12.sink.table(response_body)
-            }
-
-            local response_text = table.concat(response_body)
-            local success, data = pcall(rapidjson.decode, response_text)
-
-            logger.dbg("Response:", data)
-            dict_popup:onClose()
-            local size = Screen:getSize()
-            local width = math.floor(size.w * 0.9)
-
-            if success and type(data) == "table" and #data > 1 then
-                local titles = data[2]
-                local buttons = {
-                    TextWidget:new{
-                        text=_("Found entries"),
-                        face = Font:getFace("xx_smallinfofont")
-
-                    }
-
-                }
-                for i, title in ipairs(titles) do
-                    if i > 0 then
-                            table.insert(buttons, VerticalSpan:new{ width = 10 })
-                        end
-                    table.insert(buttons, Button:new{
-                        text = title,
-                        width = width,
-                        callback = function()
-                            logger.dbg("Selected:", title)
-                        end
-                    })
-                end
-                local buttonsTable = VerticalGroup:new{
-                    unpack(buttons)
-                }
-                UIManager:show(
-                    CenterContainer:new{
-                        dimen = size,
-                        FrameContainer:new{
-                            padding = Size.padding.default,
-                            background = Blitbuffer.COLOR_WHITE,
-                            bordersize = Size.border.window,
-                            radius = Size.radius.window,
-                            buttonsTable
-                        }
-                    })
-            end
-
-
-
+            CopperMindBuilder:showSearchResults(dict_popup)
         end
     }})
-
 end
 
 function CopperMindBuilder:onDispatcherRegisterActions()
