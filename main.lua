@@ -5,12 +5,33 @@ This is a debug plugin to test Plugin functionality.
 --]]--
 
 local Dispatcher = require("dispatcher")  -- luacheck:ignore
-local InfoMessage = require("ui/widget/infomessage")
 local UIManager = require("ui/uimanager")
+local Device = require("device")
+local Blitbuffer = require("ffi/blitbuffer")
+--Widgets imports
+local InfoMessage = require("ui/widget/infomessage")
 local FocusManager = require("ui/widget/focusmanager")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local _ = require("gettext")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local Button = require("ui/widget/button")
+local Screen = Device.screen
+local ButtonTable = require("ui/widget/buttontable")
+local CenterContainer = require("ui/widget/container/centercontainer")
+local FrameContainer = require("ui/widget/container/framecontainer")
+local Size = require("ui/size")
+local VerticalSpan = require("ui/widget/verticalspan")
+local TextWidget = require("ui/widget/textwidget")
+local Font = require("ui/font")
+
+--Network imports
+local http = require("socket.http")
+local https = require("ssl.https")
+local ltn12 = require("ltn12")
+local rapidjson = require("rapidjson")
+
+--Utils imports
 local logger = require("logger")
+local _ = require("gettext")
 
 
 local CopperMindBuilder = WidgetContainer:extend{
@@ -18,8 +39,11 @@ local CopperMindBuilder = WidgetContainer:extend{
     is_doc_only = false,
 }
 
-function CopperMindBuilder:onDictButtonsReady(dict_popup, buttons)
 
+--[[--
+Triggered when selected word
+--]]--
+function CopperMindBuilder:onDictButtonsReady(dict_popup, buttons)
     table.insert(buttons, 1, {{
         id = "coppermind",
         text = _("Search on Coppermind"),
@@ -27,7 +51,59 @@ function CopperMindBuilder:onDictButtonsReady(dict_popup, buttons)
         callback = function()
             local button = dict_popup.button_table.button_by_id["coppermind"]
             if not button then return end
-            logger.dbg("Coppermind: Search",dict_popup.lookupword )
+            local response_body = {}
+            http.request{
+                url = "https://es.coppermind.net/w/api.php?action=opensearch&format=json&formatversion=2&search=sazed&namespace=0|3000&limit=10",
+                sink = ltn12.sink.table(response_body)
+            }
+
+            local response_text = table.concat(response_body)
+            local success, data = pcall(rapidjson.decode, response_text)
+
+            logger.dbg("Response:", data)
+            dict_popup:onClose()
+            local size = Screen:getSize()
+            local width = math.floor(size.w * 0.9)
+
+            if success and type(data) == "table" and #data > 1 then
+                local titles = data[2]
+                local buttons = {
+                    TextWidget:new{
+                        text=_("Found entries"),
+                        face = Font:getFace("xx_smallinfofont")
+
+                    }
+
+                }
+                for i, title in ipairs(titles) do
+                    if i > 0 then
+                            table.insert(buttons, VerticalSpan:new{ width = 10 })
+                        end
+                    table.insert(buttons, Button:new{
+                        text = title,
+                        width = width,
+                        callback = function()
+                            logger.dbg("Selected:", title)
+                        end
+                    })
+                end
+                local buttonsTable = VerticalGroup:new{
+                    unpack(buttons)
+                }
+                UIManager:show(
+                    CenterContainer:new{
+                        dimen = size,
+                        FrameContainer:new{
+                            padding = Size.padding.default,
+                            background = Blitbuffer.COLOR_WHITE,
+                            bordersize = Size.border.window,
+                            radius = Size.radius.window,
+                            buttonsTable
+                        }
+                    })
+            end
+
+
 
         end
     }})
