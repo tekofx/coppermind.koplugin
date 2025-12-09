@@ -4,28 +4,29 @@ This is a debug plugin to test Plugin functionality.
 @module koplugin.HelloWorld
 --]]--
 
-local Dispatcher = require("dispatcher")  -- luacheck:ignore
-local UIManager = require("ui/uimanager")
-local Device = require("device")
 local Blitbuffer = require("ffi/blitbuffer")
---Widgets imports
-local InfoMessage = require("ui/widget/infomessage")
-local FocusManager = require("ui/widget/focusmanager")
-local WidgetContainer = require("ui/widget/container/widgetcontainer")
-local VerticalGroup = require("ui/widget/verticalgroup")
-local Button = require("ui/widget/button")
+local Dispatcher = require("dispatcher")  -- luacheck:ignore
+
+--UI Imports
+local Device = require("device")
+local Font = require("ui/font")
 local Screen = Device.screen
+local Size = require("ui/size")
+local UIManager = require("ui/uimanager")
+
+--Widgets imports
+local Button = require("ui/widget/button")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
-local Size = require("ui/size")
-local VerticalSpan = require("ui/widget/verticalspan")
+local InfoMessage = require("ui/widget/infomessage")
 local TextWidget = require("ui/widget/textwidget")
-local Font = require("ui/font")
+local VerticalGroup = require("ui/widget/verticalgroup")
+local VerticalSpan = require("ui/widget/verticalspan")
+local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
 --Network imports
 local http = require("socket.http")
-local https = require("ssl.https")
 local ltn12 = require("ltn12")
 local rapidjson = require("rapidjson")
 
