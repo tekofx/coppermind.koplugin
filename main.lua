@@ -28,7 +28,7 @@ local ViewHTML = require("ui/viewhtml")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
 --Network imports
-local http = require("socket.http")
+local https = require("ssl.https")
 local ltn12 = require("ltn12")
 local rapidjson = require("rapidjson")
 
@@ -52,9 +52,10 @@ function CopperMindBuilder:showSearchResults(dict_popup)
     local response_body = {}
 
 
-    http.request{
-        url = string.format("https://es.coppermind.net/w/api.php?action=opensearch&format=json&formatversion=2&search=%s&namespace=0|3000&limit=10",dict_popup.word ),
-        sink = ltn12.sink.table(response_body)
+    https.request{
+        url = string.format("https://coppermind.net/w/api.php?action=opensearch&format=json&formatversion=2&search=%s&namespace=0|3000&limit=10",dict_popup.word ),
+        sink = ltn12.sink.table(response_body),
+
     }
 
     local response_text = table.concat(response_body)
@@ -110,9 +111,9 @@ function CopperMindBuilder:showWiki(url)
     local size = Screen:getSize()
     local width = math.floor(size.w * 0.9)
     local response_body = {}
-    local res, code = http.request{
+    local res, code = https.request{
         url = url,
-        sink = ltn12.sink.table(response_body)
+        sink = ltn12.sink.table(response_body),
     }
     if res then
         local html = table.concat(response_body)
