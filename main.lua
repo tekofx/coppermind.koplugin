@@ -19,7 +19,10 @@ local Button = require("ui/widget/button")
 local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
+local HorizontalGroup = require("ui/widget/horizontalgroup")
+local ListView = require("ui/widget/listview")
 local InfoMessage = require("ui/widget/infomessage")
+local IconButton = require("ui/widget/iconbutton")
 local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
 local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -50,44 +53,79 @@ local WikiSearchResults = WidgetContainer:extend{
 
 function CopperMindBuilder:showSearchResults(dict_popup)
     local response_body = {}
-
-
     https.request{
         url = string.format("https://coppermind.net/w/api.php?action=opensearch&format=json&formatversion=2&search=%s&namespace=0|3000&limit=10",dict_popup.word ),
         sink = ltn12.sink.table(response_body),
-
     }
-
     local response_text = table.concat(response_body)
     local success, data = pcall(rapidjson.decode, response_text)
-    local wikiResultsMenu = nil
     dict_popup:onClose()
     local size = Screen:getSize()
     local width = math.floor(size.w * 0.9)
+    local height = math.floor(size.w * 0.9)
 
     if success and type(data) == "table" and #data > 1 then
         local titles = data[2]
         local urls = data[4]
-        local buttons = {
-            TextWidget:new{
-                text=_("Found entries"),
-                face = Font:getFace("xx_smallinfofont")
-            }
-        }
+        local buttons = {}
         for i, title in ipairs(titles) do
             if i > 0 then
-                    table.insert(buttons, VerticalSpan:new{ width = 10 })
+                    table.insert(buttons, VerticalSpan:new{ width = 5 })
                 end
             table.insert(buttons, Button:new{
                 text = title,
-                width = width,
+                width = width - 20,
                 callback = function()
                     CopperMindBuilder.showWiki(self, urls[i])
                 end
             })
         end
-        local buttonsTable = VerticalGroup:new{
-            unpack(buttons)
+
+        local list_view = ListView:new{
+            height = height,
+            width = width,
+            item_height = Size.padding.button,
+            page_update_cb = function(curr_page_num, total_pages)
+                logger.dbg("AAAAAAAAAAAAAAAAAAAA")
+
+                -- This callback function will be called whenever a page
+                -- turn event is triggered. You can use it to update
+                -- information on the parent widget.
+            end,
+            items = {
+                table.unpack(buttons)
+            }
+        }
+
+        local bottomButtons = HorizontalGroup:new{
+            IconButton:new {
+                 icon = "chevron.left",
+                 callback = function()
+                     list_view:prevPage()
+                 end
+            },
+            IconButton:new {
+                 icon = "close",
+                 callback = function()
+                     UIManager:close(self.wiki_results_menu,"ui")
+                 end
+            },
+            IconButton:new {
+                 icon = "chevron.right",
+                 callback = function()
+                     list_view:nextPage()
+                 end
+            },
+        }
+
+        local verticalGroup = VerticalGroup:new{
+            TextWidget:new{
+                width = width,
+                text=string.format("Found %d entries", #titles),
+                face = Font:getFace("xx_smallinfofont")
+            },
+            list_view,
+            bottomButtons
         }
 
        self.wiki_results_menu = CenterContainer:new{
@@ -97,7 +135,7 @@ function CopperMindBuilder:showSearchResults(dict_popup)
                 background = Blitbuffer.COLOR_WHITE,
                 bordersize = Size.border.window,
                 radius = Size.radius.window,
-                buttonsTable
+                verticalGroup
             }
         }
 
@@ -110,6 +148,8 @@ end
 function CopperMindBuilder:showWiki(url)
     local size = Screen:getSize()
     local width = math.floor(size.w * 0.9)
+    local height = math.floor(size.h * 0.9)
+
     local response_body = {}
     local res, code = https.request{
         url = url,
@@ -118,20 +158,20 @@ function CopperMindBuilder:showWiki(url)
     if res then
         local html = table.concat(response_body)
         UIManager:close(self.wiki_results_menu)
-        local dialog = CenterContainer:new{ -- or your main dialog
+        local dialog = CenterContainer:new{
             dimen = size,
-            -- ... other settings
         }
 
         local scroll_widget = ScrollHtmlWidget:new{
             html_body = html,
-            width = size.w,
-            height = size.h,
+            width = width,
+            height = height,
             dialog = dialog, -- Set the dialog reference
         }
 
         dialog[1] = FrameContainer:new{
             -- ... container settings
+            padding = Size.padding.default,
             scroll_widget
         }
 
