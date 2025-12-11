@@ -24,6 +24,7 @@ local HorizontalSpan = require("ui/widget/horizontalspan")
 local ListView = require("ui/widget/listview")
 local InfoMessage = require("ui/widget/infomessage")
 local IconButton = require("ui/widget/iconbutton")
+local InputDialog = require("ui/widget/inputdialog")
 local MultiInputDialog = require("ui/widget/multiinputdialog")
 local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
 local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
@@ -245,7 +246,7 @@ function CopperMindBuilder:onToolsClick()
                     width = width,
                     text = "Change instance of Coppermind",
                     callback = function()
-
+                        self.changeInstanceDialog(self)
                     end
                 },
                 VerticalSpan:new{
@@ -272,6 +273,44 @@ function CopperMindBuilder:onToolsClick()
         }
     }
     UIManager:show(self.settings_dialog)
+end
+
+function CopperMindBuilder:changeInstanceDialog()
+    self.instance_change_dialog = InputDialog:new{
+        title = _("Select instance"),
+        input = "coppermind.net",
+        -- A placeholder text shown in the text box.
+        input_hint = _("Hint text"),
+        -- input_type = nil, -- default for text
+        -- A description shown above the input.
+        description = _("Some more description."),
+        -- text_type = "password",
+        buttons = {
+            {
+                {
+                    text = _("Cancel"),
+                    id = "close",
+                    callback = function()
+                        UIManager:close(self.instance_change_dialog, "ui")
+                    end,
+                },
+                {
+                    text = _("Save"),
+                    -- button with is_enter_default set to true will be
+                    -- triggered after user press the enter key from keyboard
+                    is_enter_default = true,
+                    callback = function()
+                        logger.dbg("Got user input as raw text:", self.instance_change_dialog:getInputText())
+                        logger.dbg("Got user input as value:", self.instance_change_dialog:getInputValue())
+                        UIManager:close(self.instance_change_dialog, "ui")
+                        UIManager:show(self.settings_dialog)
+                    end,
+                },
+            }
+        },
+    }
+    UIManager:close(self.settings_dialog, "ui")
+    UIManager:show(self.instance_change_dialog)
 end
 
 return CopperMindBuilder
