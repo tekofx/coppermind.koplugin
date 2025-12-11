@@ -165,7 +165,7 @@ end
 function CopperMindBuilder:showWiki(url)
     local size = Screen:getSize()
     local width = math.floor(size.w * 0.9)
-    local height = math.floor(size.h * 0.8)
+    local height = math.floor(size.h * 1)
 
     local response_body = {}
     local res, code = https.request{
@@ -182,7 +182,7 @@ function CopperMindBuilder:showWiki(url)
         local scroll_widget = ScrollHtmlWidget:new{
             html_body = html,
             width = size.w,
-            height = height,
+            height = height - 50,
             dialog = dialog, -- Set the dialog reference
         }
 
