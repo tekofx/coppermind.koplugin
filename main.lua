@@ -162,10 +162,9 @@ function CopperMindBuilder:showWiki(url)
             dimen = size,
         }
 
-
         local scroll_widget = ScrollHtmlWidget:new{
             html_body = html,
-            width = width,
+            width = size.w,
             height = height,
             dialog = dialog, -- Set the dialog reference
         }
@@ -174,10 +173,10 @@ function CopperMindBuilder:showWiki(url)
             VerticalGroup:new{
                 scroll_widget,
                 IconButton:new {
-                     icon = "close",
-                     callback = function()
-                         UIManager:close(dialog,"ui")
-                     end
+                    icon = "close",
+                    callback = function()
+                        UIManager:close(dialog,"ui")
+                    end
                 },
         }
 
