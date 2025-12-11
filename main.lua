@@ -148,7 +148,7 @@ end
 function CopperMindBuilder:showWiki(url)
     local size = Screen:getSize()
     local width = math.floor(size.w * 0.9)
-    local height = math.floor(size.h * 0.9)
+    local height = math.floor(size.h * 0.8)
 
     local response_body = {}
     local res, code = https.request{
@@ -157,10 +157,11 @@ function CopperMindBuilder:showWiki(url)
     }
     if res then
         local html = table.concat(response_body)
-        UIManager:close(self.wiki_results_menu)
+        UIManager:close(self.wiki_results_menu, "ui")
         local dialog = CenterContainer:new{
             dimen = size,
         }
+
 
         local scroll_widget = ScrollHtmlWidget:new{
             html_body = html,
@@ -169,10 +170,15 @@ function CopperMindBuilder:showWiki(url)
             dialog = dialog, -- Set the dialog reference
         }
 
-        dialog[1] = FrameContainer:new{
-            -- ... container settings
-            padding = Size.padding.default,
-            scroll_widget
+        dialog[1] =
+            VerticalGroup:new{
+                scroll_widget,
+                IconButton:new {
+                     icon = "close",
+                     callback = function()
+                         UIManager:close(dialog,"ui")
+                     end
+                },
         }
 
         UIManager:show(dialog)
