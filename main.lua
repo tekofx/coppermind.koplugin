@@ -6,6 +6,8 @@ This is a debug plugin to test Plugin functionality.
 
 local Blitbuffer = require("ffi/blitbuffer")
 local Dispatcher = require("dispatcher")  -- luacheck:ignore
+local DataStorage = require("datastorage")
+local LuaSettings = require("luasettings")
 
 --UI Imports
 local Device = require("device")
@@ -49,14 +51,36 @@ local CopperMindBuilder = WidgetContainer:extend{
     is_doc_only = false,
 }
 
+function CopperMindBuilder:init()
+    self:onDispatcherRegisterActions()
+    self.ui.menu:registerToMainMenu(self)
+    self.cm_settings = self:readSettings()
+    self.coppermind_instance = self.cm_settings.data.coppermind.coppermind_instance or "coppermind.net"
+end
+
+function CopperMindBuilder:readSettings()
+    local cm_settings = LuaSettings:open(DataStorage:getSettingsDir().."/coppermind.lua")
+    cm_settings:readSetting("coppermind", {})
+    return cm_settings
+end
+
+function CopperMindBuilder:saveSettings()
+    local tempsettings = {
+        coppermind_instance = self.coppermind_instance
+    }
+    self.cm_settings:saveSetting("coppermind", tempsettings)
+    self.cm_settings:flush()
+end
 
 function CopperMindBuilder:showSearchResults(dict_popup)
     local response_body = {}
+    logger.dbg(self.coppermind_instance)
     https.request{
-        url = string.format("https://coppermind.net/w/api.php?action=opensearch&format=json&formatversion=2&search=%s&namespace=0|3000&limit=10",dict_popup.word ),
+        url = string.format("https://%s/w/api.php?action=opensearch&format=json&formatversion=2&search=%s&namespace=0|3000&limit=10",self.coppermind_instance,dict_popup.word ),
         sink = ltn12.sink.table(response_body),
     }
     local response_text = table.concat(response_body)
+    logger.dbg(response_text)
     local success, data = pcall(rapidjson.decode, response_text)
     dict_popup:onClose()
     local size = Screen:getSize()
@@ -85,7 +109,6 @@ function CopperMindBuilder:showSearchResults(dict_popup)
             width = width,
             item_height = Size.padding.button,
             page_update_cb = function(curr_page_num, total_pages)
-                logger.dbg("AAAAAAAAAAAAAAAAAAAA")
 
                 -- This callback function will be called whenever a page
                 -- turn event is triggered. You can use it to update
@@ -196,7 +219,7 @@ function CopperMindBuilder:onDictButtonsReady(dict_popup, buttons)
         callback = function()
             local button = dict_popup.button_table.button_by_id["coppermind"]
             if not button then return end
-            CopperMindBuilder:showSearchResults(dict_popup)
+            CopperMindBuilder.showSearchResults(self,dict_popup)
         end
     }})
 end
@@ -205,10 +228,7 @@ function CopperMindBuilder:onDispatcherRegisterActions()
     Dispatcher:registerAction("helloworld_action", {category="none", event="HelloWorld", title=_("Hello World"), general=true,})
 end
 
-function CopperMindBuilder:init()
-    self:onDispatcherRegisterActions()
-    self.ui.menu:registerToMainMenu(self)
-end
+
 
 function CopperMindBuilder:addToMainMenu(menu_items)
     menu_items.coppermind = {
@@ -278,7 +298,7 @@ end
 function CopperMindBuilder:changeInstanceDialog()
     self.instance_change_dialog = InputDialog:new{
         title = _("Select instance"),
-        input = "coppermind.net",
+        input = self.coppermind_instance,
         -- A placeholder text shown in the text box.
         input_hint = _("Hint text"),
         -- input_type = nil, -- default for text
@@ -302,6 +322,9 @@ function CopperMindBuilder:changeInstanceDialog()
                     callback = function()
                         logger.dbg("Got user input as raw text:", self.instance_change_dialog:getInputText())
                         logger.dbg("Got user input as value:", self.instance_change_dialog:getInputValue())
+                        self.coppermind_instance = self.instance_change_dialog:getInputValue()
+                        logger.dbg(self.coppermind_instance)
+                        self:saveSettings()
                         UIManager:close(self.instance_change_dialog, "ui")
                         UIManager:show(self.settings_dialog)
                     end,
