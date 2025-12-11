@@ -45,11 +45,6 @@ local CopperMindBuilder = WidgetContainer:extend{
     is_doc_only = false,
 }
 
-local WikiSearchResults = WidgetContainer:extend{
-    name = "wiki_search_results",
-    is_doc_only = false,
-}
-
 
 function CopperMindBuilder:showSearchResults(dict_popup)
     local response_body = {}
@@ -212,21 +207,23 @@ function CopperMindBuilder:init()
 end
 
 function CopperMindBuilder:addToMainMenu(menu_items)
-    menu_items.hello_world = {
-        text = _("Hello World"),
+    menu_items.coppermind = {
+        text = _("Coppermind"),
         -- in which menu this should be appended
-        sorting_hint = "more_tools",
+        sorting_hint = "tools",
         -- a callback when tapping
         callback = function()
-            CopperMindBuilder.onHelloWorld(self)
+            CopperMindBuilder.onToolsClick(self)
         end,
     }
 end
 
-function CopperMindBuilder:onHelloWorld()
+function CopperMindBuilder:onToolsClick()
     local popup = InfoMessage:new{
-        text = _("Hello World"),
+        text = _("Coppermind - Version 0.5\nSelect a word in a document to search it on the Coppermind"),
     }
+
+
     UIManager:show(popup)
 end
 
