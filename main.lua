@@ -18,22 +18,17 @@ local UIManager = require("ui/uimanager")
 
 --Widgets imports
 local Button = require("ui/widget/button")
-local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
 local HorizontalSpan = require("ui/widget/horizontalspan")
 local ListView = require("ui/widget/listview")
-local InfoMessage = require("ui/widget/infomessage")
 local IconButton = require("ui/widget/iconbutton")
 local InputDialog = require("ui/widget/inputdialog")
-local MultiInputDialog = require("ui/widget/multiinputdialog")
-local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
 local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
 local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
 local VerticalSpan = require("ui/widget/verticalspan")
-local ViewHTML = require("ui/viewhtml")
 local WidgetContainer = require("ui/widget/container/widgetcontainer")
 
 --Network imports
