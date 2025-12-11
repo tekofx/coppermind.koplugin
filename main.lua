@@ -20,9 +20,12 @@ local ButtonTable = require("ui/widget/buttontable")
 local CenterContainer = require("ui/widget/container/centercontainer")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local HorizontalGroup = require("ui/widget/horizontalgroup")
+local HorizontalSpan = require("ui/widget/horizontalspan")
 local ListView = require("ui/widget/listview")
 local InfoMessage = require("ui/widget/infomessage")
 local IconButton = require("ui/widget/iconbutton")
+local MultiInputDialog = require("ui/widget/multiinputdialog")
+local RadioButtonWidget = require("ui/widget/radiobuttonwidget")
 local ScrollHtmlWidget = require("ui/widget/scrollhtmlwidget")
 local TextWidget = require("ui/widget/textwidget")
 local VerticalGroup = require("ui/widget/verticalgroup")
@@ -219,12 +222,56 @@ function CopperMindBuilder:addToMainMenu(menu_items)
 end
 
 function CopperMindBuilder:onToolsClick()
-    local popup = InfoMessage:new{
-        text = _("Coppermind - Version 0.5\nSelect a word in a document to search it on the Coppermind"),
+    local size = Screen:getSize()
+    local width = math.floor(size.w * 0.9)
+    local height = math.floor(size.w * 0.9)
+    self.settings_dialog = CenterContainer:new{
+        dimen = size,
+        FrameContainer:new{
+            padding = Size.padding.default,
+            background = Blitbuffer.COLOR_WHITE,
+            bordersize = Size.border.window,
+            radius = Size.radius.window,
+            VerticalGroup:new{
+                TextWidget:new{
+                    width = width,
+                    text = "Coppermind - Version 0.5",
+                    face = Font:getFace("xx_smallinfofont")
+                },
+                VerticalSpan:new{
+                    width = 5
+                },
+                Button:new{
+                    width = width,
+                    text = "Change instance of Coppermind",
+                    callback = function()
+
+                    end
+                },
+                VerticalSpan:new{
+                    width = 5
+                },
+                HorizontalGroup:new{
+                    Button:new{
+                        text = "Close",
+                        callback = function()
+                            UIManager:close(self.settings_dialog,"ui")
+                        end
+                    },
+                    HorizontalSpan:new{
+                        width = 5,
+                    },
+                    Button:new{
+                        text = "Save",
+                        callback = function()
+                            UIManager:close(self.settings_dialog,"ui")
+                        end
+                    }
+                }
+            }
+        }
     }
-
-
-    UIManager:show(popup)
+    UIManager:show(self.settings_dialog)
 end
 
 return CopperMindBuilder
